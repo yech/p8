@@ -167,15 +167,6 @@ function wrapper() {
         }
 
 
-        /*
-         alert(s, true, function() {
-         var list = $(".ui-dialog-content input:eq(0)").val();
-         var d = { list:list };
-         console.log("blacklist saved:" + JSON.stringify(d));
-         window.localStorage['l8-users'] = JSON.stringify(d);
-         });
-         */
-
         dialog({
             html:'<div id="l8TasksCheck">' + html + '</div>',
             dialogClass:'ui-dialog-l8TasksCheck',
@@ -272,20 +263,6 @@ function wrapper() {
                     }
 
                 }
-
-                $.each([0, 1, 2, 3 , 4 , 5 , 6 , 7], function (ind, slot) {
-                    /*
-                     percent = portal.resonators[slot][4] ? Math.floor(portal.resonators[slot][3]/portal.resonators[slot][4]*100) : 0;
-                     title = 'title="owner: <b>' + portal.resonators[slot][1] + '</b><br>'
-                     + 'energy: ' + portal.resonators[slot][3] + ' / ' + portal.resonators[slot][4] + ' (' + percent + '%)<br>'
-                     + 'distance: ' + portal.resonators[slot][2] + 'm';
-
-                     html += '<td class="L' + portal.resonators[slot][0] +'" ' + title + '">' + portal.resonators[slot][0] + '</td>';
-                     */
-
-                });
-
-
                 html += '</tr>';
             }
         });
