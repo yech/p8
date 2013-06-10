@@ -34,8 +34,9 @@ function wrapper() {
         //addHook('portalAdded', window.plugin.l8TasksCheck.extractPortalData);
 
         $('head').append('<style>' +
-            '#dialog-l8TasksCheck {max-height:300px !important}' +
-            '.ui-dialog-l8TasksCheck {max-width: 1000px !important; width: auto !important;max-height:400px !important}' +
+            '#dialog-l8TasksCheck {max-height:260px !important}' +
+            '.ui-dialog-l8TasksCheck {max-width: 1400px !important; width: auto !important;max-height:360px !important}' +
+            '.ui-dialog-content {max-width: 1400px !important;}' +
             '#l8TasksCheck table {margin-top:5px; border-collapse: collapse; empty-cells: show; width:100%; clear: both;}' +
             '#l8TasksCheck table td, #l8TasksCheck table th {border-bottom: 1px solid #0b314e; padding:3px; color:white; background-color:#1b415e}' +
             '#l8TasksCheck table tr.res td {  background-color: #005684; }' +
