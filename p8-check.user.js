@@ -34,7 +34,8 @@ function wrapper() {
         //addHook('portalAdded', window.plugin.l8TasksCheck.extractPortalData);
 
         $('head').append('<style>' +
-            '.ui-dialog-l8TasksCheck {max-width: 1000px !important; width: auto !important}' +
+            '#dialog-l8TasksCheck {max-height:300px !important}' +
+            '.ui-dialog-l8TasksCheck {max-width: 1000px !important; width: auto !important;max-height:400px !important}' +
             '#l8TasksCheck table {margin-top:5px; border-collapse: collapse; empty-cells: show; width:100%; clear: both;}' +
             '#l8TasksCheck table td, #l8TasksCheck table th {border-bottom: 1px solid #0b314e; padding:3px; color:white; background-color:#1b415e}' +
             '#l8TasksCheck table tr.res td {  background-color: #005684; }' +
@@ -171,7 +172,8 @@ function wrapper() {
             html:'<div id="l8TasksCheck">' + html + '</div>',
             dialogClass:'ui-dialog-l8TasksCheck',
             title:'Portals need L8 resonators: ',
-            id:'l8TasksCheck'
+            id:'l8TasksCheck',
+            modal:false
         });
 
     };
@@ -251,12 +253,12 @@ function wrapper() {
                     var user = users[userIndex], found = false;
                     if (user.trim() === '') continue;
                     for (var slot = 0; slot < 8; slot++) {
-                        if (resonators[slot][0]===8 && (resonators[slot][1].toLowerCase() === user.toLowerCase())) {
+                        if (resonators[slot][0] === 8 && (resonators[slot][1].toLowerCase() === user.toLowerCase())) {
                             found = true;
                             break;
                         }
                     }
-                    if(found){
+                    if (found) {
                         html += '<td>Y</td>';
                     } else {
                         html += '<td class="need">N</td>';
