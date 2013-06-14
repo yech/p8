@@ -218,6 +218,23 @@ function wrapper() {
         return count;
     };
 
+    window.plugin.l8TasksCheck.highlightUserPortals = function(user) {
+        var displayBounds = map.getBounds();
+        $.each(window.portals, function (i, portal) {
+            portalResetColor(portal); 
+            if (!displayBounds.contains(portal.getLatLng()))
+                return true;
+
+            $.each(portal.options.details.resonatorArray.resonators, function (ind, reso) {
+                if (reso && reso.ownerGuid == window.playerNameToGuid(user) && reso.level == 8) {
+//                    console.log(portal.bringToFront);
+//                    console.log(COLOR_SELECTED_PORTAL);
+                    portal.bringToFront().setStyle({color: "#f0f"});
+                }
+            });
+        });
+    };
+
     window.plugin.l8TasksCheck.portalTable = function (sortBy, filter, users) {
         // sortOrder <0 ==> desc, >0 ==> asc, i use sortOrder * -1 to change the state
 
@@ -259,10 +276,11 @@ function wrapper() {
                             break;
                         }
                     }
+                    var onclickScript = 'window.plugin.l8TasksCheck.highlightUserPortals(\'' + user + '\');';
                     if (found) {
-                        html += '<td>Y</td>';
+                        html += '<td onclick="' + onclickScript  + '">Y</td>';
                     } else {
-                        html += '<td class="need">N</td>';
+                        html += '<td class="need" onclick="' + onclickScript + '">N</td>';
                     }
 
                 }
@@ -276,7 +294,7 @@ function wrapper() {
 
     window.plugin.l8TasksCheck.fetchUserList = function () {
         var list = window.localStorage['l8-users'],
-            defaultData = { list:'luoxuan,likefood,phoeagon,marstone,sunqiang,xiaolee,yech,kanew'};
+            defaultData = { list:'luoxuan,Likefood,phoeagon,marstone,sunqiang,xiaolee,yech,kanew'};
         try {
             return list == null ? defaultData : JSON.parse(list);
         } catch (e) {
