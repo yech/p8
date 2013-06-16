@@ -27,11 +27,40 @@ function wrapper() {
     window.plugin.l8TasksCheck = function () {
     };
 
-    window.plugin.l8TasksCheck.filter = 2;
+    window.plugin.l8TasksCheck.config = {
+        filter:2,
+        sortBy:'level',
+        descSort:false,
+        dialogLeft:null,
+        dialogTop:null,
+        users:'luoxuan,Likefood,phoeagon,marstone,sunqiang,xiaolee,yech,kanew',
+        displayExcluded:false,
+        excludedPortals:''
+    };
+
+    var config = window.plugin.l8TasksCheck.config;
+
+    window.plugin.l8TasksCheck.setConfig = function (configName, configValue) {
+        window.plugin.l8TasksCheck.config[configName] = configValue;
+        window.plugin.l8TasksCheck.saveConfig();
+    };
+
+    window.plugin.l8TasksCheck.saveConfig = function () {
+        window.localStorage['l8-check'] = JSON.stringify(window.plugin.l8TasksCheck.config);
+    };
+
+    window.plugin.l8TasksCheck.loadConfig = function () {
+        window.plugin.l8TasksCheck.config = JSON.parse(window.localStorage['l8-check']);
+    };
 
     window.plugin.l8TasksCheck.setupCallback = function (data) {
-        $('#toolbox').append(' <a onclick="window.plugin.l8TasksCheck.check()" title="check whether users should deploy L8 res!">L8</a>');
-        //addHook('portalAdded', window.plugin.l8TasksCheck.extractPortalData);
+        if (localStorage.getItem("l8-check") == null) {
+            window.plugin.l8TasksCheck.saveConfig();
+        } else {
+            window.plugin.l8TasksCheck.loadConfig();
+        }
+
+        $('#toolbox').append(' <a onclick="window.plugin.l8TasksCheck.refresh();return false;" title="check whether users should deploy L8 res!">L8</a>');
 
         $('head').append('<style>' +
             '#dialog-l8TasksCheck {max-height:260px !important}' +
@@ -67,7 +96,6 @@ function wrapper() {
 
     window.plugin.l8TasksCheck.highlight = function (data) {
 
-        console.log(data);
         var d = data.portal.options.details;
         var portal_weakness = 0;
         if (getTeam(d) !== 0) {
@@ -76,7 +104,6 @@ function wrapper() {
             if (PLAYER.guid === d.captured.capturingPlayerId) {
                 color = 'gray';
             }
-
 
             if (color !== '') {
                 data.portal.setStyle({fillColor:color, fillOpacity:opacity});
@@ -156,33 +183,68 @@ function wrapper() {
         return retval;
     };
 
-    window.plugin.l8TasksCheck.check = function () {
-        var data = window.plugin.l8TasksCheck.fetchUserList();
-        var users = data.list.split(",");
-        // console.log("blacklist read: " + JSON.stringify(data));
-        var html = '<div>User Ids:<input id="l8users" value="' + data.list + '" style="width:500px"/>&nbsp;&nbsp;' +
-            '<a onclick="window.plugin.l8TasksCheck.refresh()">refresh</a></div>';
+
+    window.plugin.l8TasksCheck.hideExclude = function () {
+        window.plugin.l8TasksCheck.setConfig('displayExcluded', false);
+        window.plugin.l8TasksCheck.refresh();
+        return false;
+    };
+
+    window.plugin.l8TasksCheck.showExclude = function () {
+        window.plugin.l8TasksCheck.setConfig('displayExcluded', true);
+        window.plugin.l8TasksCheck.refresh();
+        return false;
+    };
+
+    window.plugin.l8TasksCheck.check = function (sortBy, descSort) {
+        if (sortBy !== undefined) {
+            window.plugin.l8TasksCheck.setConfig('sortBy', sortBy);
+        }
+        if (descSort !== undefined) {
+            window.plugin.l8TasksCheck.setConfig('descSort', descSort);
+        }
+        var html = '<div>User Ids:<input id="l8users" value="' + window.plugin.l8TasksCheck.config.users + '"  ' +
+            'style="width:500px"/>&nbsp;&nbsp;' +
+            '<a onclick="window.plugin.l8TasksCheck.refresh();return false;" title="click here to refresh portal list after you change users">refresh</a>&nbsp;&nbsp;&nbsp;';
+        if (window.plugin.l8TasksCheck.config.displayExcluded) {
+            html += '<a onclick="window.plugin.l8TasksCheck.hideExclude()" title="don\'t display excluded portals in list">hide excluded</a>&nbsp;&nbsp;';
+        } else {
+            html += '<a onclick="window.plugin.l8TasksCheck.showExclude()" title="display excluded portals in list">show excluded</a>&nbsp;&nbsp;';
+        }
+        html += '</div>';
         if (window.plugin.l8TasksCheck.getPortals()) {
-            html += window.plugin.l8TasksCheck.portalTable('level', window.plugin.l8TasksCheck.filter, users);
+            html += window.plugin.l8TasksCheck.portalTable();
         } else {
             html = '<table><tr><td>Nothing to show!</td></tr></table>';
         }
-
-
-        dialog({
+        var option = {
             html:'<div id="l8TasksCheck">' + html + '</div>',
             dialogClass:'ui-dialog-l8TasksCheck',
             title:'Portals need L8 resonators: ',
             id:'l8TasksCheck',
-            modal:false
-        });
+            modal:false,
+            position:{
+                my:'center bottom',
+                at:'center bottom',
+                of:window
+            },
+            dragStop:function (event, ui) {
+                window.plugin.l8TasksCheck.setConfig('dialogLeft', ui.position.left);
+                window.plugin.l8TasksCheck.setConfig('dialogTop', ui.position.top);
+            }
+        };
+
+        if (window.plugin.l8TasksCheck.config.dialogLeft != null) {
+            option.position = [window.plugin.l8TasksCheck.config.dialogLeft, window.plugin.l8TasksCheck.config.dialogTop];
+        }
+        dialog(option);
 
     };
 
-// portal link - single click: select portal
-//               double click: zoom to and select portal
-//               hover: show address
-// code from getPortalLink function by xelio from iitc: AP List - https://raw.github.com/breunigs/ingress-intel-total-conversion/gh-pages/plugins/ap-list.user.js
+    // portal link - single click: select portal
+    //               double click: zoom to and select portal
+    //               hover: show address
+    // code from getPortalLink function by xelio from iitc: AP List - https://raw.github.com/breunigs/ingress-intel-total-conversion/gh-pages/plugins/ap-list.user.js
     window.plugin.l8TasksCheck.getPortalLink = function (portal, guid) {
 
         var latlng = [portal.locationE6.latE6 / 1E6, portal.locationE6.lngE6 / 1E6].join();
@@ -203,103 +265,198 @@ function wrapper() {
     };
 
     window.plugin.l8TasksCheck.refresh = function () {
-        var d = { list:$("#l8users").val() };
-        window.localStorage['l8-users'] = JSON.stringify(d);
+        var users = $("#l8users").val();
+        if (users !== undefined) {
+            window.plugin.l8TasksCheck.setConfig('users', users);
+        }
+        window.plugin.l8TasksCheck.resetColor();
         window.plugin.l8TasksCheck.check();
     };
 
-    window.plugin.l8TasksCheck.getL8ResCount = function (resonators) {
+    window.plugin.l8TasksCheck.getNeedL8ResCount = function (resonators) {
         var count = 0;
         for (var slot = 0; slot < 8; slot++) {
             if (resonators[slot][0] === 8) {
                 count++;
             }
         }
-        return count;
+        return 8 - count;
     };
 
-    window.plugin.l8TasksCheck.highlightUserPortals = function(user) {
-        var displayBounds = map.getBounds();
+    window.plugin.l8TasksCheck.resetColor = function () {
         $.each(window.portals, function (i, portal) {
-            portalResetColor(portal); 
-            if (!displayBounds.contains(portal.getLatLng()))
-                return true;
-
-            $.each(portal.options.details.resonatorArray.resonators, function (ind, reso) {
-                if (reso && reso.ownerGuid == window.playerNameToGuid(user) && reso.level == 8) {
-//                    console.log(portal.bringToFront);
-//                    console.log(COLOR_SELECTED_PORTAL);
-                    portal.bringToFront().setStyle({color: "#f0f"});
-                }
-            });
+            portalResetColor(portal);
         });
     };
 
-    window.plugin.l8TasksCheck.portalTable = function (sortBy, filter, users) {
-        // sortOrder <0 ==> desc, >0 ==> asc, i use sortOrder * -1 to change the state
+    window.plugin.l8TasksCheck.highlightUserPortals = function (user, need, filter) {
+        var displayBounds = map.getBounds();
+        var excludedPortals = window.plugin.l8TasksCheck.config.excludedPortals;
+        $.each(window.portals, function (i, portal) {
+            portalResetColor(portal);
+            var portalInfo = portal.options;
+            if (portalInfo.level < 8 && (portalInfo.team == filter || portalInfo.team == 0) && need) {
+                if (window.plugin.l8TasksCheck.config.displayExcluded === true || excludedPortals.indexOf(portalInfo.guid) == -1) {
+                    if (!displayBounds.contains(portal.getLatLng()))
+                        return;
 
-        window.plugin.l8TasksCheck.filter = filter;
+                    var foundRes = false;
+                    $.each(portalInfo.details.resonatorArray.resonators, function (ind, reso) {
+                        if (reso && reso.ownerGuid == window.playerNameToGuid(user) && reso.level == 8) {
+                            foundRes = true;
+                        }
+                    });
+                    if (!foundRes) {
+                        portal.bringToFront().setStyle({color:"#f0f"});
+                    }
+                }
+            }
+        });
+    };
+
+    window.plugin.l8TasksCheck.sort = function (datas, sortBy, descOrder) {
+        if (datas.length === 0) return;
+        if (datas[0][sortBy] === undefined) return;
+
+        var sortPortalData = function (dataA, dataB) {
+            var valA = dataA[sortBy],
+                valB = dataB[sortBy];
+            if (valA === valB) return 0;
+            return (valA < valB) ? -1 : 1;
+        };
+        if (descOrder) {
+            datas.sort(sortPortalData).reverse();
+        } else {
+            datas.sort(sortPortalData);
+        }
+    };
+
+    window.plugin.l8TasksCheck.excludePortal = function (guid) {
+        var excludedPortals = window.plugin.l8TasksCheck.config.excludedPortals;
+        if (excludedPortals === undefined || excludedPortals === null || excludedPortals === '') {
+            window.plugin.l8TasksCheck.setConfig('excludedPortals', guid);
+        } else {
+            if (excludedPortals.indexOf(guid) === -1) {
+                var s = excludedPortals.split(",");
+                var newExcludePortals = '';
+                for (var i = 0; i < s.length; i++) {
+                    if (s[i].trim() !== '') {
+                        newExcludePortals += s[i] + ",";
+                    }
+                }
+                window.plugin.l8TasksCheck.setConfig('excludedPortals', (newExcludePortals + ',' + guid));
+            }
+        }
+    };
+
+    window.plugin.l8TasksCheck.recoverExcludedPortal = function (guid) {
+
+        var excludedPortals = window.plugin.l8TasksCheck.config.excludedPortals;
+        if (!(excludedPortals === undefined || excludedPortals === null || excludedPortals === '')) {
+            if (excludedPortals.indexOf(guid) !== -1) {
+                var s = excludedPortals.split(",");
+                var newExcludedPortals = '';
+                for (var i = 0; i < s.length; i++) {
+                    if (s[i].trim() !== '' && s[i].trim() !== guid) {
+                        newExcludedPortals += s[i] + ",";
+                    }
+                }
+                window.plugin.l8TasksCheck.setConfig('excludedPortals', (newExcludedPortals));
+            }
+        }
+    };
+
+    window.plugin.l8TasksCheck.portalTable = function () {
+        var sortBy = window.plugin.l8TasksCheck.config.sortBy,
+            descSort = window.plugin.l8TasksCheck.config.descSort,
+            filter = window.plugin.l8TasksCheck.config.filter,
+            users = window.plugin.l8TasksCheck.config.users.split(','),
+            excludedPortals = window.plugin.l8TasksCheck.config.excludedPortals,
+            displayExcluded = window.plugin.l8TasksCheck.config.displayExcluded;
+
+        // sortOrder <0 ==> desc, >0 ==> asc, i use sortOrder * -1 to change the state
+        console.log('sort by ' + sortBy + (descSort == true ? ' d' : '') + ' filter:' + filter + ' users:' + users);
         var portals = window.plugin.l8TasksCheck.listPortals;
 
+        var getSortTableFunctionCall = function (sortBy, highLight) {
+            var func = 'window.plugin.l8TasksCheck.check(\'' + sortBy + '\',' + (descSort == true ? 'false' : 'true') + ');';
+            func += 'window.plugin.l8TasksCheck.highlightUserPortals(\'' + sortBy + '\',' + (highLight ? 'true' : 'false') + ',' + filter + ');';
+            return func + 'return false;';
+        };
 
         var html = '';
         html += '<table>'
             + '<tr><th>Portal</th>'
-            + '<th>Level</th>'
-            + '<th>Need</th>';
+            + '<th><a onclick="' + getSortTableFunctionCall('level', false) + '">Level</a></th>'
+            + '<th><a onclick="' + getSortTableFunctionCall('need', false) + '">Need</a></th>';
         for (var userIndex = 0; userIndex < users.length; userIndex++) {
             var user = users[userIndex];
             if (user.trim() === '') continue;
-            html += '<th>' + users[userIndex] + '</th>';
+            html += '<th><a onclick="' + getSortTableFunctionCall(user, descSort) + '">' + user + '</a></th>';
         }
-        html += '</tr>';
+        html += '<th>&nbsp;&nbsp;</th></tr>';
 
+
+        var datas = [];
 
         $.each(portals, function (ind, portal) {
 
-            if ((filter === 0 || filter === portal.team || portal.team == 0 ) && portal.level != 8) {
-                var resonators = portal.resonators;
-                var l8count = window.plugin.l8TasksCheck.getL8ResCount(resonators);
+            if ((portal.team === filter || portal.team === 0 ) && portal.level != 8) {
+                if (displayExcluded === true || excludedPortals.indexOf(portal.guid) == -1) {
+                    var resonators = portal.resonators;
 
-                html += '<tr class="' + (portal.team === 1 ? 'res' : (portal.team === 2 ? 'enl' : 'neutral')) + '">'
-                    + '<td style="">' + window.plugin.l8TasksCheck.getPortalLink(portal.portal, portal.guid) + '</td>'
-                    + '<td class="L' + Math.floor(portal.level) + '">' + portal.level + '</td>'
-                    + '<td>' + (8 - l8count) + '</td>';
+                    var data = {
+                        portal:portal,
+                        level:portal.level,
+                        need:window.plugin.l8TasksCheck.getNeedL8ResCount(resonators)
+                    };
 
-
-                for (userIndex = 0; userIndex < users.length; userIndex++) {
-                    var user = users[userIndex], found = false;
-                    if (user.trim() === '') continue;
-                    for (var slot = 0; slot < 8; slot++) {
-                        if (resonators[slot][0] === 8 && (resonators[slot][1].toLowerCase() === user.toLowerCase())) {
-                            found = true;
-                            break;
+                    for (userIndex = 0; userIndex < users.length; userIndex++) {
+                        var user = users[userIndex], found = false;
+                        if (user.trim() === '') continue;
+                        data[user] = 'N';
+                        for (var slot = 0; slot < 8; slot++) {
+                            if (resonators[slot][0] === 8 && (resonators[slot][1].toLowerCase() === user.toLowerCase())) {
+                                data[user] = 'Y';
+                                break;
+                            }
                         }
                     }
-                    var onclickScript = 'window.plugin.l8TasksCheck.highlightUserPortals(\'' + user + '\');';
-                    if (found) {
-                        html += '<td onclick="' + onclickScript  + '">Y</td>';
-                    } else {
-                        html += '<td class="need" onclick="' + onclickScript + '">N</td>';
-                    }
-
+                    datas.push(data);
                 }
-                html += '</tr>';
             }
         });
+
+        window.plugin.l8TasksCheck.sort(datas, sortBy, descSort);
+        for (var dataIndex = 0; dataIndex < datas.length; dataIndex++) {
+            var data = datas[dataIndex],
+                portal = data.portal,
+                isExcluded = excludedPortals.indexOf(portal.guid) !== -1;
+            html += '<tr class="' + (portal.team === 1 ? 'res' : (portal.team === 2 ? 'enl' : 'neutral')) + '">'
+                + '<td>' + window.plugin.l8TasksCheck.getPortalLink(portal.portal, portal.guid) + '</td>'
+                + '<td class="L' + Math.floor(portal.level) + '">' + portal.level + '</td>'
+                + '<td>' + data.need + '</td>';
+            for (userIndex = 0; userIndex < users.length; userIndex++) {
+                user = users[userIndex];
+                if (user.trim() === '') continue;
+                html += '<td ' + (data[user] === 'N' ? 'class="need"' : '') + '>' + data[user] + '</td>';
+            }
+            if (isExcluded) {
+                html += '<td><a style="color:red" onclick="' + 'window.plugin.l8TasksCheck.recoverExcludedPortal(\'' + portal.guid + '\');' +
+                    'window.plugin.l8TasksCheck.check(\'' + sortBy + '\',' + descSort +
+                    ');return false;" title="recover this portal from excluded portal list">recover</a></td></tr>';
+            } else {
+                html += '<td><a onclick="' + 'window.plugin.l8TasksCheck.excludePortal(\'' + portal.guid + '\');' +
+                    'window.plugin.l8TasksCheck.check(\'' + sortBy + '\',' + descSort +
+                    ');return false;" title="exclude this portal from task list">exclude</a></td></tr>';
+            }
+
+        }
+
+
         html += '</table>';
 
         return html;
-    };
-
-    window.plugin.l8TasksCheck.fetchUserList = function () {
-        var list = window.localStorage['l8-users'],
-            defaultData = { list:'luoxuan,Likefood,phoeagon,marstone,sunqiang,xiaolee,yech,kanew'};
-        try {
-            return list == null ? defaultData : JSON.parse(list);
-        } catch (e) {
-            return defaultData;
-        }
     };
 
     var setup = function () {
