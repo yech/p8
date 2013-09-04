@@ -285,7 +285,8 @@ function wrapper() {
 
     window.plugin.l8TasksCheck.resetColor = function () {
         $.each(window.portals, function (i, portal) {
-            portalResetColor(portal);
+            //portalResetColor(portal);
+            portal.setStyle({color:COLORS[getTeam(portal.options.details)],fillOpacity:0.5});
         });
     };
 
