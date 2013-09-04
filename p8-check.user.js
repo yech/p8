@@ -285,7 +285,6 @@ function wrapper() {
 
     window.plugin.l8TasksCheck.resetColor = function () {
         $.each(window.portals, function (i, portal) {
-            //portalResetColor(portal);
             portal.setStyle({color:COLORS[getTeam(portal.options.details)],fillOpacity:0.5});
         });
     };
@@ -294,7 +293,7 @@ function wrapper() {
         var displayBounds = map.getBounds();
         var excludedPortals = window.plugin.l8TasksCheck.config.excludedPortals;
         $.each(window.portals, function (i, portal) {
-            portalResetColor(portal);
+            portal.setStyle({color:COLORS[getTeam(portal.options.details)],fillOpacity:0.5});
             var portalInfo = portal.options;
             if (portalInfo.level < 8 && (portalInfo.team == filter || portalInfo.team == 0) && need) {
                 if (window.plugin.l8TasksCheck.config.displayExcluded === true || excludedPortals.indexOf(portalInfo.guid) == -1) {
